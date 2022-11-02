@@ -3,6 +3,8 @@
 
 let piano_init = false;
 let notes = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+let colors = {bg: '#ADD8E6', start_color: '#ff2400', end_color: '#4B0082'}
+let spheres = {};
 
 //default function plays note on keypress
 
@@ -16,6 +18,11 @@ function triggerNote(note, midi = true) {
 
     //displays note name in browser (you can remove this line)
     document.getElementById('txt').innerText = note.name + note.octave;
+    if( spheres[note.name].position.y < 4){
+        spheres[note.name].position.y += 0.5;
+    } else {
+        spheres[note.name].position.y = -3;
+    }
 
     //play note using appropriate function given input type
     if (midi) { //midi keyboard input
@@ -79,19 +86,30 @@ function keyReleased() {
     stopNote(keynotes[keyCode]);
 }
 
+//set the scene in setup
 function setup() {
     noLoop();
     //color background white
-    scene.clearColor = new BABYLON.Color3.FromHexString('#ffffff');
+    scene.clearColor = new BABYLON.Color3.FromHexString(colors.bg);
 
-    //initialize camera
-    var camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 4, 100, BABYLON.Vector3.Zero(), scene);
-    camera.attachControl(canvas, true);
+    // This creates and positions a free camera (non-mesh)
+    var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, 6), scene);
+
+    // This targets the camera to scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());
 
     //initialize light
     var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
     light.intensity = 1;
 
+    //create a sphere for each note in list
+    for (var i = 0; i < notes.length; i++) {
+        var note = notes[i];
+        spheres[note] = createSphere(i*1.25-4, -3, 0, 1, scene);
+        let clr = babLerpColor(colors.start_color, colors.end_color, i/notes.length, scene);
+        spheres[note].material = new BABYLON.StandardMaterial('material', scene);
+        spheres[note].material.diffuseColor = clr;
+    }
 
     synth = new Tone.PolySynth(Tone.MonoSynth, {
         volume: -8,
